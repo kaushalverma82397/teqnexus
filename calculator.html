@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TeqNexus | Electrical Testing Calculator</title>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--text:#182230;--muted:#667085;--accent:#1565c0;--line:#d9e2ec;--ok:#067647}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--text)}
+header{background:#fff;color:#102033;padding:24px 18px;text-align:center;border-bottom:1px solid #dfe7ef;box-shadow:0 4px 18px rgba(16,32,51,.06)}
+header h1{margin:0 0 7px;font-size:26px}header p{margin:0;opacity:.9}
+.container{max-width:1150px;margin:20px auto;padding:0 14px}
+.tabs{display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;margin-bottom:16px;padding:2px 2px 8px;scrollbar-width:thin}
+.tab{border:1px solid var(--line);background:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;white-space:nowrap;flex:0 0 auto;color:var(--text);font-size:14px;display:inline-flex;align-items:center;justify-content:center;min-height:42px}
+.tab.active{background:var(--accent);color:white;border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 3px 12px #1018280b}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{font-size:13px;font-weight:600;display:block;margin-bottom:6px}
+input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;background:white}
+button{border:0;border-radius:8px;padding:11px 15px;background:var(--accent);color:white;font-weight:700;cursor:pointer;margin-top:12px}
+button.secondary{background:#475467}.result{margin-top:15px;padding:15px;border-radius:10px;background:#eef6ff;border:1px solid #bfdbfe}
+.result strong{color:#0d47a1}.formula{color:var(--muted);font-size:13px;margin-top:7px}
+.hidden{display:none}.ansi{width:100%;border-collapse:collapse;margin-top:10px}.ansi th,.ansi td{border:1px solid var(--line);padding:9px;text-align:left}.ansi th{background:#f2f4f7}
+footer{text-align:center;color:var(--muted);padding:20px;font-size:12px}
+@media print{header,.tabs,button,footer{display:none}.card{box-shadow:none}}
+</style>
+</head>
+<body><div style="background:#fff;color:#102033;padding:14px 20px;font-family:Arial;font-weight:700;border-bottom:1px solid #e5eaf0">⚡ TeqNexus Pvt. Ltd. — Electrical Testing Calculator <a href="index.html" style="float:right;color:#1565c0">← Company Website</a></div>
+<header>
+<h1>⚡ Electrical Testing Calculator</h1>
+<p>PT • CT • Relay • Transformer • Differential • Hi-Pot • Load & Power Calculations</p><p style="margin-top:8px;font-size:14px;font-weight:700;opacity:1">Created by Kaushal Kumar</p>
+</header>
+
+<div class="container">
+<div class="tabs">
+<button class="tab active" onclick="show('pt',this)">PT</button>
+<button class="tab" onclick="show('ct',this)">CT</button>
+<button class="tab" onclick="show('relay',this)">Relay</button>
+<button class="tab" onclick="show('xfmr',this)">Transformer</button>
+<button class="tab" onclick="show('diff',this)">Differential</button>
+<button class="tab" onclick="show('hipot',this)">Hi-Pot</button>
+<button class="tab" onclick="show('load',this)">Load/Power</button>
+<button class="tab" onclick="show('rtime',this)">Relay Time</button>
+<button class="tab" onclick="show('ptest',this)">Protection Test Guide</button>
+<button class="tab" onclick="show('ansi',this)">ANSI Codes</button>
+</div>
+
+<section id="pt" class="card">
+<h2>PT / VT Ratio & Injection</h2>
+<div class="grid">
+<div><label>Primary Voltage (V)</label><input id="ptp" type="number" value="33000"></div>
+<div><label>Secondary Voltage (V)</label><input id="pts" type="number" value="110"></div>
+<div><label>Applied Primary Injection (V)</label><input id="pti" type="number" value="1000"></div>
+<div><label>Measured Secondary (V)</label><input id="ptm" type="number" value="3.33"></div>
+</div>
+<button onclick="calcPT()">Calculate</button>
+<div id="ptout" class="result"></div>
+<div class="formula">Nominal ratio = Vprimary / Vsecondary. Expected secondary = Injection / ratio. Ratio error = (Measured − Expected) / Expected × 100.</div>
+</section>
+
+<section id="ct" class="card hidden">
+<h2>CT Ratio, Secondary & Injection</h2>
+<div class="grid">
+<div><label>CT Primary Rating (A)</label><input id="ctp" type="number" value="100"></div>
+<div><label>CT Secondary Rating (A)</label><input id="cts" type="number" value="5"></div>
+<div><label>Primary Test Current (A)</label><input id="cti" type="number" value="50"></div>
+<div><label>Measured Secondary (A)</label><input id="ctm" type="number" value="2.5"></div>
+<div><label>Relay CT Secondary Input (A)</label><select id="ctrelaysec"><option value="5">5 A</option><option value="1">1 A</option></select></div>
+<div><label>Relay Test Current (× In)</label><input id="ctmult" type="number" value="1"></div>
+</div>
+<button onclick="calcCT()">Calculate</button>
+<div id="ctout" class="result"></div>
+<div class="formula">Expected CT secondary = Primary test current × CT secondary / CT primary. Relay injection current = CT secondary input × selected multiple.</div>
+</section>
+
+<section id="relay" class="card hidden">
+<h2>Relay Pickup / FLC / Setting</h2>
+<div class="grid">
+<div><label>Load / Motor Rating (kW)</label><input id="rkW" type="number" value="100"></div>
+<div><label>Voltage (V)</label><input id="rV" type="number" value="415"></div>
+<div><label>Power Factor</label><input id="rpf" type="number" value="0.85"></div>
+<div><label>Efficiency (%)</label><input id="reff" type="number" value="95"></div>
+<div><label>CT Primary (A)</label><input id="rct" type="number" value="200"></div>
+<div><label>CT Secondary (A)</label><select id="rcts"><option value="5">5 A</option><option value="1">1 A</option></select></div>
+<div><label>Pickup Setting (% of CT Primary)</label><input id="rset" type="number" value="100"></div>
+</div>
+<button onclick="calcRelay()">Calculate</button>
+<div id="relayout" class="result"></div>
+<div class="formula">3-phase FLC ≈ kW×1000 / (√3×V×PF×η). Primary pickup = FLC × setting %. Relay secondary pickup = primary pickup × CT secondary / CT primary.</div>
+</section>
+
+<section id="xfmr" class="card hidden">
+<h2>Transformer Full Load Current</h2>
+<div class="grid">
+<div><label>Transformer Rating (kVA)</label><input id="xkva" type="number" value="3000"></div>
+<div><label>HV Voltage (V)</label><input id="xhv" type="number" value="33000"></div>
+<div><label>LV Voltage (V)</label><input id="xlv" type="number" value="433"></div>
+<div><label>Phases</label><select id="xph"><option value="3">3 Phase</option><option value="1">1 Phase</option></select></div>
+</div>
+<button onclick="calcXfmr()">Calculate</button>
+<div id="xfout" class="result"></div>
+</section>
+
+<section id="diff" class="card hidden">
+<h2>Transformer Differential Reference</h2>
+<div class="grid">
+<div><label>Transformer MVA</label><input id="dmva" type="number" value="5"></div>
+<div><label>HV Voltage (kV)</label><input id="dhv" type="number" value="33"></div>
+<div><label>LV Voltage (kV)</label><input id="dlv" type="number" value="11"></div>
+<div><label>HV CT Ratio (Primary/5A)</label><input id="dhct" type="number" value="100"></div>
+<div><label>LV CT Ratio (Primary/5A)</label><input id="dlct" type="number" value="300"></div>
+<div><label>Differential Pickup (%)</label><input id="dpick" type="number" value="30"></div>
+</div>
+<button onclick="calcDiff()">Calculate</button>
+<div id="diffout" class="result"></div>
+<div class="formula">For 3-phase transformer current: I = MVA×1000/(√3×kV). This tool gives reference currents; actual differential compensation depends on relay vector group, CT connections and relay configuration.</div>
+</section>
+
+<section id="hipot" class="card hidden">
+<h2>Hi-Pot Test Voltage Reference</h2>
+<div class="grid">
+<div><label>Equipment Rated Voltage (kV)</label><input id="hv" type="number" value="11"></div>
+<div><label>Multiplier / Test Factor</label><input id="hm" type="number" value="2"></div>
+</div>
+<button onclick="calcHipot()">Calculate Reference</button>
+<div id="hout" class="result"></div>
+<div class="formula">This is only a calculation reference. Actual AC/DC withstand voltage and duration must be taken from the applicable standard, manufacturer test specification and site procedure.</div>
+</section>
+
+<section id="load" class="card hidden">
+<h2>Load / Power Calculator</h2>
+<div class="grid">
+<div><label>Voltage (V)</label><input id="lv" type="number" value="415"></div>
+<div><label>Current (A)</label><input id="li" type="number" value="100"></div>
+<div><label>Power Factor</label><input id="lpf" type="number" value="0.9"></div>
+<div><label>Phases</label><select id="lph"><option value="3">3 Phase</option><option value="1">1 Phase</option></select></div>
+</div>
+<button onclick="calcLoad()">Calculate</button>
+<div id="lout" class="result"></div>
+</section>
+
+<section id="rtime" class="card hidden">
+<h2>Relay Time Calculator & Test Guide</h2>
+<p class="formula">Select protection and enter settings. The calculator shows pickup, 2×, 5× and 10× injection, angle guidance, theoretical operating time and test purpose.</p>
+<div class="grid"><div><label>Protection Function</label><select id="rtfunc" onchange="renderRelayTimeForm()">
+<option value="51">50/51 - Phase Overcurrent</option><option value="51N">50N/51N - Earth Fault</option><option value="67">67 - Directional Overcurrent</option><option value="67N">67N - Directional Earth Fault</option><option value="87T">87T - Transformer Differential</option><option value="87B">87B - Busbar Differential</option><option value="87L">87L - Line Differential</option><option value="27">27 - Under Voltage</option><option value="59">59 - Over Voltage</option><option value="46">46 - Negative Sequence</option><option value="49">49 - Thermal</option><option value="81">81U/81O - Frequency</option><option value="21">21 - Distance</option><option value="32">32 - Directional Power</option>
+</select></div></div>
+<div id="rtform" class="card" style="margin-top:12px;background:#fafcff"></div><div id="rtout" class="result"></div>
+</section>
+
+
+
+<section id="ptest" class="card hidden">
+<h2>OMICRON Protection Test Plan</h2>
+<p class="formula">Select the protection and enter the relay/transformer data. The tool generates a clear test-plan table showing injection current, angle, purpose and expected result. Final angles/compensation must be checked against the exact relay model, vector-group implementation and approved test procedure.</p>
+
+<div class="grid">
+<div><label>Protection Function</label>
+<select id="psel" onchange="renderProtectionForm()">
+<option value="51">50/51 - Phase Overcurrent</option>
+<option value="51N">50N/51N - Earth Fault</option>
+<option value="67">67 - Directional Overcurrent</option>
+<option value="67N">67N - Directional Earth Fault</option>
+<option value="87T">87T - Transformer Differential</option>
+<option value="87B">87B - Busbar Differential</option>
+<option value="87L">87L - Line Differential</option>
+<option value="27">27 - Under Voltage</option>
+<option value="59">59 - Over Voltage</option>
+<option value="46">46 - Negative Sequence</option>
+<option value="49">49 - Thermal Overload</option>
+<option value="81">81U/81O - Frequency</option>
+<option value="21">21 - Distance</option>
+<option value="32">32 - Directional Power</option>
+</select></div>
+</div>
+
+<div id="pform" class="card" style="margin-top:12px;background:#fafcff"></div>
+<div id="presult" class="result"></div>
+</section>
+
+
+<section id="ansi" class="card hidden">
+<h2>Common Protection ANSI Codes</h2>
+<table class="ansi">
+<tr><th>ANSI</th><th>Function</th></tr>
+<tr><td>21</td><td>Distance Protection</td></tr>
+<tr><td>25</td><td>Synchronism / Synchronizing Check</td></tr>
+<tr><td>27</td><td>Under Voltage</td></tr>
+<tr><td>32</td><td>Directional Power</td></tr>
+<tr><td>46</td><td>Negative Sequence / Phase Unbalance</td></tr>
+<tr><td>47</td><td>Phase Sequence / Voltage Unbalance</td></tr>
+<tr><td>49</td><td>Thermal Overload</td></tr>
+<tr><td>50</td><td>Instantaneous Overcurrent</td></tr>
+<tr><td>51</td><td>Time Overcurrent</td></tr>
+<tr><td>50N/51N</td><td>Neutral / Earth Fault Overcurrent</td></tr>
+<tr><td>52</td><td>AC Circuit Breaker</td></tr>
+<tr><td>59</td><td>Over Voltage</td></tr>
+<tr><td>64</td><td>Earth Fault / Ground Detection</td></tr>
+<tr><td>67</td><td>Directional Overcurrent</td></tr>
+<tr><td>74</td><td>Alarm / Trip Circuit Supervision</td></tr>
+<tr><td>81U/O</td><td>Under / Over Frequency</td></tr>
+<tr><td>86</td><td>Lockout Relay</td></tr>
+<tr><td>87T</td><td>Transformer Differential</td></tr>
+<tr><td>87B</td><td>Busbar Differential</td></tr>
+<tr><td>87L</td><td>Line Differential</td></tr>
+</table>
+</section>
+
+<div class="card">
+<h3>Test Notes</h3>
+<p style="color:#667085">Always isolate equipment, discharge and earth where required, verify test-kit connections, and follow the approved method statement, OEM instructions and applicable standards before applying any test voltage/current.</p>
+<button class="secondary" onclick="window.print()">🖨 Print / Save PDF</button>
+<button class="secondary" onclick="downloadHTML()">⬇ Save HTML</button>
+</div>
+</div>
+
+<footer>Electrical Testing Calculator • Standalone HTML • For engineering reference and testing calculations<br><strong>Created by Kaushal Kumar</strong>
+<div class="footer-social" style="display:flex;justify-content:center;align-items:center;gap:18px;margin:24px 0 10px;">
+  <a href="https://www.linkedin.com/company/teqnexus/" target="_blank" rel="noopener noreferrer" aria-label="TeqNexus LinkedIn"
+     style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:8px;background:#0A66C2;color:#fff;text-decoration:none;font-weight:700;font-family:Arial,sans-serif;font-size:22px;">in</a>
+  <a href="https://www.instagram.com/teq.nexus/" target="_blank" rel="noopener noreferrer" aria-label="TeqNexus Instagram"
+     style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;background:linear-gradient(45deg,#f58529,#dd2a7b,#8134af,#515bd4);color:#fff;text-decoration:none;font-weight:700;font-family:Arial,sans-serif;font-size:20px;">◎</a>
+</div>
+
+</footer>
+
+<script>
+function show(id,el){
+document.querySelectorAll('section').forEach(x=>x.classList.add('hidden'));
+document.getElementById(id).classList.remove('hidden');
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+el.classList.add('active');
+}
+function n(id){return parseFloat(document.getElementById(id).value)||0}
+function calcPT(){
+let p=n('ptp'),s=n('pts'),inj=n('pti'),meas=n('ptm'),r=p/s,exp=inj/r,err=exp?((meas-exp)/exp)*100:0;
+document.getElementById('ptout').innerHTML=`<strong>PT Ratio:</strong> ${r.toFixed(4)} : 1<br><strong>Expected Secondary:</strong> ${exp.toFixed(4)} V<br><strong>Measured Secondary:</strong> ${meas.toFixed(4)} V<br><strong>Ratio Error:</strong> ${err.toFixed(3)} %`;
+}
+function calcCT(){
+let p=n('ctp'),s=n('cts'),i=n('cti'),m=n('ctm'),rs=n('ctrelaysec'),mult=n('ctmult');
+let r=p/s,exp=i/r,err=exp?((m-exp)/exp)*100:0,relayI=rs*mult;
+document.getElementById('ctout').innerHTML=`<strong>CT Ratio:</strong> ${r.toFixed(4)} : 1<br><strong>Expected Secondary:</strong> ${exp.toFixed(4)} A<br><strong>Measured Secondary:</strong> ${m.toFixed(4)} A<br><strong>Ratio Error:</strong> ${err.toFixed(3)} %<br><strong>Relay Secondary Input:</strong> ${rs.toFixed(2)} A<br><strong>Test Injection at ${mult.toFixed(2)} × In:</strong> ${relayI.toFixed(3)} A`;
+}
+function calcRelay(){
+let kw=n('rkW'),v=n('rV'),pf=n('rpf'),eff=n('reff')/100,ct=n('rct'),cts=n('rcts'),set=n('rset');
+let flc=kw*1000/(Math.sqrt(3)*v*pf*eff),pick=flc*set/100,sec=pick*cts/ct;
+document.getElementById('relayout').innerHTML=`<strong>Estimated FLC:</strong> ${flc.toFixed(3)} A<br><strong>Pickup Primary:</strong> ${pick.toFixed(3)} A<br><strong>CT Ratio:</strong> ${ct.toFixed(0)} / ${cts.toFixed(0)} A<br><strong>Pickup Secondary / Relay:</strong> ${sec.toFixed(3)} A`;
+}
+function calcXfmr(){
+let kva=n('xkva'),hv=n('xhv'),lv=n('xlv'),ph=n('xph'),f=ph==3?Math.sqrt(3):1;
+let ih=kva*1000/(f*hv),il=kva*1000/(f*lv);
+document.getElementById('xfout').innerHTML=`<strong>HV FLC:</strong> ${ih.toFixed(3)} A<br><strong>LV FLC:</strong> ${il.toFixed(3)} A`;
+}
+function calcDiff(){
+let m=n('dmva'),hv=n('dhv'),lv=n('dlv'),hct=n('dhct'),lct=n('dlct'),pick=n('dpick');
+let ih=m*1000/(Math.sqrt(3)*hv),il=m*1000/(Math.sqrt(3)*lv);
+let hs=ih*5/hct,ls=il*5/lct;
+document.getElementById('diffout').innerHTML=`<strong>HV Rated Current:</strong> ${ih.toFixed(3)} A<br><strong>LV Rated Current:</strong> ${il.toFixed(3)} A<br><strong>HV CT Secondary at Rated Load:</strong> ${hs.toFixed(3)} A<br><strong>LV CT Secondary at Rated Load:</strong> ${ls.toFixed(3)} A<br><strong>Reference Differential Pickup (${pick}% of 5A):</strong> ${(5*pick/100).toFixed(3)} A<br><br><em>Use relay manufacturer's vector-group/ratio compensation before final setting.</em>`;
+}
+function calcHipot(){
+let kv=n('hv'),mult=n('hm'),out=kv*mult;
+document.getElementById('hout').innerHTML=`<strong>Calculated Reference:</strong> ${out.toFixed(2)} kV<br><strong>In Volts:</strong> ${(out*1000).toFixed(0)} V`;
+}
+function calcLoad(){
+let v=n('lv'),i=n('li'),pf=n('lpf'),ph=n('lph'),f=ph==3?Math.sqrt(3):1;
+let kva=f*v*i/1000,kw=kva*pf;
+document.getElementById('lout').innerHTML=`<strong>Apparent Power:</strong> ${kva.toFixed(3)} kVA<br><strong>Real Power:</strong> ${kw.toFixed(3)} kW`;
+}
+
+function calcRelayTime(){
+let pickup=n('rtpickupamp'),curve=document.getElementById('rtcurve').value,tms=n('rttms'),dt=n('rtdt'),delay=n('rtdelay');
+let psms=[2,5,10];
+let rows=psms.map(psm=>{
+let fault=pickup*psm,time;
+if(curve==='DT') time=dt;
+else if(curve==='NI') time=tms*0.14/(Math.pow(psm,0.02)-1);
+else if(curve==='VI') time=tms*13.5/(psm-1);
+else if(curve==='EI') time=tms*80/(Math.pow(psm,2)-1);
+else if(curve==='LTI') time=tms*120/(psm-1);
+return `<tr><td><strong>${psm}</strong></td><td>${fault.toFixed(3)} A</td><td>${(time+delay).toFixed(4)} s</td></tr>`;
+}).join('');
+document.getElementById('rtimeout').innerHTML=`<strong>Function:</strong> ${document.getElementById('rtfunc').value}<br><strong>Pickup Current:</strong> ${pickup.toFixed(3)} A
+<table class="ansi"><tr><th>PSM</th><th>Fault / Test Current</th><th>Operating Time</th></tr>${rows}</table>`;
+}
+
+
+function calcProtectionGuide(){
+let pickup=n('pgpickup'), sec=n('pgct'), set=n('pgset'), curve=document.getElementById('pgcurve').value, tms=n('pgtms');
+let actualPickup=pickup*set/100;
+let psms=[1,2,5,10];
+let rows=psms.map(m=>{
+ let current=actualPickup*m, time='Pickup / reference';
+ if(m>1){
+   if(curve==='NI') time=(tms*0.14/(Math.pow(m,0.02)-1)).toFixed(4)+' s';
+   if(curve==='VI') time=(tms*13.5/(m-1)).toFixed(4)+' s';
+   if(curve==='EI') time=(tms*80/(Math.pow(m,2)-1)).toFixed(4)+' s';
+   if(curve==='LTI') time=(tms*120/(m-1)).toFixed(4)+' s';
+ }
+ return `<tr><td>${m}×</td><td>${current.toFixed(3)} A</td><td>${time}</td><td>${m===1?'Pickup test':m+'× timing/operation test'}</td></tr>`;
+}).join('');
+document.getElementById('pgout').innerHTML=`<strong>Relay Pickup:</strong> ${actualPickup.toFixed(3)} A<br><strong>CT Secondary:</strong> ${sec.toFixed(2)} A<table class="ansi"><tr><th>PSM</th><th>Suggested Injection</th><th>Expected Time*</th><th>Test</th></tr>${rows}</table><p class="formula">*Timing is theoretical IEC curve reference; use the exact relay manufacturer's curve/tolerance for acceptance.</p>`;
+}
+function calcDiffGuide(){
+let mva=n('pgmva'),hv=n('pghv'),lv=n('pglv'),hct=n('pghct'),lct=n('pglct'),sec=n('pgdsec'),pick=n('pgdpick'),bias=n('pgbias');
+let ih=mva*1000/(Math.sqrt(3)*hv), il=mva*1000/(Math.sqrt(3)*lv);
+let hs=ih*sec/hct, ls=il*sec/lct;
+let pickupA=sec*pick/100;
+document.getElementById('pgdiffout').innerHTML=`<strong>HV Rated Current:</strong> ${ih.toFixed(3)} A<br><strong>LV Rated Current:</strong> ${il.toFixed(3)} A<br><strong>HV CT Secondary at Rated Load:</strong> ${hs.toFixed(3)} A<br><strong>LV CT Secondary at Rated Load:</strong> ${ls.toFixed(3)} A<br><strong>Reference Differential Pickup:</strong> ${pickupA.toFixed(3)} A (${pick}%)<br><strong>Bias/Slope:</strong> ${bias}%<br><br><strong>Suggested test sequence:</strong><br>1. Verify CT ratio/phase/vector compensation.<br>2. Perform through/stability test at matched secondary currents.<br>3. Perform differential pickup test by creating an intentional mismatch according to the relay characteristic.<br>4. Verify trip output, restraint/bias characteristic and blocking logic.<br><p class="formula">Exact 87T injection currents depend on relay compensation, transformer vector group, CT connection, tap position and the relay's slope/restraint characteristic. Do not use this reference as a final trip-setting instruction.</p>`;
+}
+
+
+
+function renderProtectionForm(){
+let type=document.getElementById('psel').value, f=document.getElementById('pform');
+if(type==='51'||type==='51N'||type==='67'||type==='67N'){
+f.innerHTML=`<div class="grid">
+<div><label>CT Secondary / Relay In (A)</label><select id="pa_sec"><option value="5">5 A</option><option value="1">1 A</option></select></div>
+<div><label>Pickup Setting (A)</label><input id="pa_pick" type="number" value="1" step="0.01"></div>
+<div><label>Curve</label><select id="pa_curve"><option value="NI">IEC Normal Inverse</option><option value="VI">IEC Very Inverse</option><option value="EI">IEC Extremely Inverse</option><option value="LTI">IEC Long-Time Inverse</option></select></div>
+<div><label>TMS</label><input id="pa_tms" type="number" value="0.10" step="0.01"></div>
+<div><label>Directional Characteristic Angle (°)</label><input id="pa_charangle" type="number" value="0"></div>
+</div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='87T'){
+f.innerHTML=`<div class="grid">
+<div><label>Transformer MVA</label><input id="pa_mva" type="number" value="5"></div>
+<div><label>HV Voltage (kV)</label><input id="pa_hv" type="number" value="33"></div>
+<div><label>LV Voltage (kV)</label><input id="pa_lv" type="number" value="11"></div>
+<div><label>HV CT Primary</label><input id="pa_hct" type="number" value="100"></div>
+<div><label>LV CT Primary</label><input id="pa_lct" type="number" value="300"></div>
+<div><label>CT Secondary</label><select id="pa_sec"><option value="5">5 A</option><option value="1">1 A</option></select></div>
+<div><label>Vector Group</label><input id="pa_vg" type="text" value="Dyn11" placeholder="e.g. Dyn11"></div>
+<div><label>Relay Vector Compensation</label><select id="pa_comp"><option>Enabled / Relay Compensates</option><option>External / Test Set Compensates</option><option>Unknown - Verify Manual</option></select></div>
+<div><label>Differential Pickup (%)</label><input id="pa_pickpct" type="number" value="30"></div>
+<div><label>Bias / Slope (%)</label><input id="pa_bias" type="number" value="30"></div>
+<div><label>Test Stability Level (× rated secondary)</label><input id="pa_stab" type="number" value="1" step="0.1"></div>
+<div><label>Operate Level (× rated secondary)</label><input id="pa_op" type="number" value="2" step="0.1"></div>
+</div><button onclick="runProtectionAssistant()">Generate Omicron 87T Test Table</button>`;
+}else if(type==='87B'||type==='87L'){
+f.innerHTML=`<div class="grid">
+<div><label>Relay Pickup (A)</label><input id="pa_pick" type="number" value="1" step="0.01"></div>
+<div><label>CT Secondary (A)</label><select id="pa_sec"><option value="5">5 A</option><option value="1">1 A</option></select></div>
+<div><label>Stability Current (× In)</label><input id="pa_stab" type="number" value="1" step="0.1"></div>
+<div><label>Operate Current (× In)</label><input id="pa_op" type="number" value="2" step="0.1"></div>
+</div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='27'||type==='59'){
+f.innerHTML=`<div class="grid"><div><label>Nominal Voltage (V)</label><input id="pa_vnom" type="number" value="110"></div><div><label>Pickup (%)</label><input id="pa_vpct" type="number" value="${type==='27'?90:110}"></div><div><label>Pre-fault (%)</label><input id="pa_pref" type="number" value="100"></div></div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='46'){
+f.innerHTML=`<div class="grid"><div><label>Negative Sequence Pickup (%)</label><input id="pa_nspct" type="number" value="20"></div><div><label>Positive Sequence Current (A)</label><input id="pa_pos" type="number" value="1"></div></div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='49'){
+f.innerHTML=`<div class="grid"><div><label>Rated Current (A)</label><input id="pa_rated" type="number" value="5"></div><div><label>Thermal Pickup (%)</label><input id="pa_th" type="number" value="100"></div></div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='81'){
+f.innerHTML=`<div class="grid"><div><label>Nominal Frequency (Hz)</label><input id="pa_hz" type="number" value="50"></div><div><label>Pickup Frequency (Hz)</label><input id="pa_fpick" type="number" value="49"></div><div><label>Function</label><select id="pa_fdir"><option>81U - Under Frequency</option><option>81O - Over Frequency</option></select></div></div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='21'){
+f.innerHTML=`<div class="grid"><div><label>Zone Reach (Ω)</label><input id="pa_z" type="number" value="10"></div><div><label>Zone</label><select id="pa_zone"><option>Zone 1</option><option>Zone 2</option><option>Zone 3</option></select></div><div><label>Fault Angle (°)</label><input id="pa_zang" type="number" value="75"></div></div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}else if(type==='32'){
+f.innerHTML=`<div class="grid"><div><label>Power Pickup (%)</label><input id="pa_pp" type="number" value="5"></div><div><label>Nominal Voltage (V)</label><input id="pa_pv" type="number" value="110"></div><div><label>Reference Current (A)</label><input id="pa_pi" type="number" value="1"></div><div><label>Characteristic Angle (°)</label><input id="pa_pangle" type="number" value="0"></div></div><button onclick="runProtectionAssistant()">Generate Omicron Test Table</button>`;
+}
+}
+function runProtectionAssistant(){
+let type=document.getElementById('psel').value, out=document.getElementById('presult');
+if(type==='51'||type==='51N'||type==='67'||type==='67N'){
+let pick=n('pa_pick'),curve=document.getElementById('pa_curve').value,tms=n('pa_tms'),ang=n('pa_charangle'),tests=[1,2,5,10];
+let rows=tests.map(m=>{let cur=pick*m,time='Pickup';if(m>1){if(curve==='NI')time=(tms*0.14/(Math.pow(m,0.02)-1)).toFixed(4)+' s';if(curve==='VI')time=(tms*13.5/(m-1)).toFixed(4)+' s';if(curve==='EI')time=(tms*80/(Math.pow(m,2)-1)).toFixed(4)+' s';if(curve==='LTI')time=(tms*120/(m-1)).toFixed(4)+' s';}return `<tr><td>${m}×</td><td>${cur.toFixed(3)} A</td><td>${type==='67'||type==='67N'?ang.toFixed(1)+'°':'—'}</td><td>${time}</td><td>${m===1?'Pickup':'Timing / Trip'}</td></tr>`}).join('');
+out.innerHTML=`<h3>OMICRON Injection Table</h3><table class="ansi"><tr><th>PSM</th><th>Current Inject</th><th>Angle</th><th>Expected Time*</th><th>Purpose</th></tr>${rows}</table><p><strong>Sequence:</strong> Pickup → timing → trip/output → reset.</p><p class="formula">*Time is theoretical IEC curve time. For directional elements, use the relay's actual polarizing quantity/characteristic angle. Confirm exact Omicron connection and relay logic.</p>`;
+}else if(type==='87T'){
+let mva=n('pa_mva'),hv=n('pa_hv'),lv=n('pa_lv'),hct=n('pa_hct'),lct=n('pa_lct'),sec=n('pa_sec'),pct=n('pa_pickpct'),bias=n('pa_bias'),stab=n('pa_stab'),op=n('pa_op'),vg=document.getElementById('pa_vg').value,comp=document.getElementById('pa_comp').value;
+let ih=mva*1000/(Math.sqrt(3)*hv),il=mva*1000/(Math.sqrt(3)*lv),hs=ih*sec/hct,ls=il*sec/lct,pick=sec*pct/100;
+let diffAngle = 30; let m=vg.match(/(\d{1,2})$/); if(m) diffAngle=(parseInt(m[1])*30)%360;
+out.innerHTML=`<h3>OMICRON 87T Test Table</h3>
+<table class="ansi"><tr><th>Test</th><th>HV Current</th><th>HV Angle</th><th>LV Current</th><th>LV Angle*</th><th>Expected</th></tr>
+<tr><td>1. CT/Phase Check</td><td>${hs.toFixed(3)} A</td><td>0°</td><td>${ls.toFixed(3)} A</td><td>${diffAngle}°*</td><td>Correct phase/compensation</td></tr>
+<tr><td>2. Stability / Through</td><td>${(hs*stab).toFixed(3)} A</td><td>0°</td><td>${(ls*stab).toFixed(3)} A</td><td>${diffAngle}°*</td><td>NO TRIP</td></tr>
+<tr><td>3. Differential Pickup</td><td>Reference</td><td>0°</td><td>Adjusted</td><td>Compensated*</td><td>Pickup at characteristic</td></tr>
+<tr><td>4. Bias Point 1</td><td>Reference</td><td>0°</td><td>Adjusted</td><td>Compensated*</td><td>Stable / Trip per slope</td></tr>
+<tr><td>5. Operate / Trip</td><td>${(hs*op).toFixed(3)} A ref.</td><td>0°</td><td>Adjusted</td><td>Compensated*</td><td>TRIP</td></tr>
+</table>
+<p><strong>Transformer:</strong> ${mva} MVA, ${hv}/${lv} kV, <strong>Vector Group:</strong> ${vg}</p>
+<p><strong>HV rated secondary:</strong> ${hs.toFixed(3)} A &nbsp; | &nbsp; <strong>LV rated secondary:</strong> ${ls.toFixed(3)} A &nbsp; | &nbsp; <strong>Differential pickup reference:</strong> ${pick.toFixed(3)} A (${pct}%) &nbsp; | &nbsp; <strong>Bias:</strong> ${bias}%</p>
+<p><strong>Relay compensation:</strong> ${comp}</p>
+<p class="formula">*The vector-group clock position is shown as a planning reference only. Do NOT use this angle blindly: the exact LV/HV injection angle must follow the relay's internal vector compensation, CT connection, phase reference and test-set configuration. Verify with the relay manual/OMICRON test module.</p>`;
+}else if(type==='87B'||type==='87L'){
+let pick=n('pa_pick'),sec=n('pa_sec'),stab=n('pa_stab'),op=n('pa_op');
+out.innerHTML=`<h3>OMICRON ${type} Test Table</h3><table class="ansi"><tr><th>Test</th><th>Current Inject</th><th>Angle</th><th>Expected</th></tr><tr><td>Stability / Through</td><td>${(sec*stab).toFixed(3)} A</td><td>Scheme dependent</td><td>NO TRIP</td></tr><tr><td>Pickup / Operate</td><td>${pick.toFixed(3)} A ref.</td><td>Scheme dependent</td><td>Pickup</td></tr><tr><td>Operate / Trip</td><td>${(sec*op).toFixed(3)} A ref.</td><td>Scheme dependent</td><td>TRIP</td></tr></table><p class="formula">Actual multi-end currents/angles depend on the busbar/line differential scheme.</p>`;
+}else if(type==='27'||type==='59'){
+let v=n('pa_vnom'),pct=n('pa_vpct'),pref=n('pa_pref'),normal=v*pref/100,pick=v*pct/100;
+out.innerHTML=`<h3>OMICRON Voltage Test Table</h3><table class="ansi"><tr><th>Test</th><th>Voltage</th><th>Angle</th><th>Expected</th></tr><tr><td>Normal</td><td>${normal.toFixed(3)} V</td><td>0°</td><td>NO TRIP</td></tr><tr><td>Pickup</td><td>${pick.toFixed(3)} V</td><td>0°</td><td>Pickup</td></tr><tr><td>Trip</td><td>${pick.toFixed(3)} V</td><td>0°</td><td>TRIP after delay</td></tr></table>`;
+}else if(type==='46'){
+let pct=n('pa_nspct'),pos=n('pa_pos'),neg=pos*pct/100;
+out.innerHTML=`<h3>OMICRON 46 Test Table</h3><table class="ansi"><tr><th>Test</th><th>Positive Seq.</th><th>Negative Seq.</th><th>Expected</th></tr><tr><td>Stable</td><td>${pos.toFixed(3)} A</td><td>${(neg*0.5).toFixed(3)} A</td><td>NO TRIP</td></tr><tr><td>Pickup</td><td>${pos.toFixed(3)} A</td><td>${neg.toFixed(3)} A</td><td>Pickup</td></tr><tr><td>Trip</td><td>${pos.toFixed(3)} A</td><td>${(neg*1.2).toFixed(3)} A</td><td>TRIP</td></tr></table>`;
+}else if(type==='49'){
+let r=n('pa_rated'),pct=n('pa_th'),cur=r*pct/100;
+out.innerHTML=`<h3>OMICRON 49 Test Table</h3><table class="ansi"><tr><th>Test</th><th>Current</th><th>Expected</th></tr><tr><td>Normal</td><td>${r.toFixed(3)} A</td><td>Stable</td></tr><tr><td>Pickup reference</td><td>${cur.toFixed(3)} A</td><td>Thermal pickup/model response</td></tr><tr><td>Trip</td><td>As per thermal characteristic</td><td>TRIP after calculated thermal time</td></tr></table>`;
+}else if(type==='81'){
+let hz=n('pa_hz'),fp=n('pa_fpick'),dir=document.getElementById('pa_fdir').value;
+let test=dir.startsWith('81U')?fp+0.1:fp-0.1;
+out.innerHTML=`<h3>OMICRON Frequency Test Table</h3><table class="ansi"><tr><th>Test</th><th>Frequency</th><th>Expected</th></tr><tr><td>Normal</td><td>${hz.toFixed(3)} Hz</td><td>NO TRIP</td></tr><tr><td>Approach</td><td>${test.toFixed(3)} Hz</td><td>Pickup not reached</td></tr><tr><td>Pickup/Trip</td><td>${fp.toFixed(3)} Hz</td><td>Pickup / TRIP after delay</td></tr></table>`;
+}else if(type==='21'){
+let z=n('pa_z'),zone=document.getElementById('pa_zone').value,a=n('pa_zang');
+out.innerHTML=`<h3>OMICRON Distance Test Table</h3><table class="ansi"><tr><th>Test</th><th>Impedance</th><th>Angle</th><th>Expected</th></tr><tr><td>Inside Zone</td><td>${(z*0.8).toFixed(3)} Ω</td><td>${a.toFixed(1)}°</td><td>Operate</td></tr><tr><td>Zone Boundary</td><td>${z.toFixed(3)} Ω</td><td>${a.toFixed(1)}°</td><td>Pickup / characteristic</td></tr><tr><td>Outside Zone</td><td>${(z*1.2).toFixed(3)} Ω</td><td>${a.toFixed(1)}°</td><td>NO TRIP</td></tr></table><p>Zone: ${zone}</p>`;
+}else if(type==='32'){
+let pp=n('pa_pp'),v=n('pa_pv'),i=n('pa_pi'),a=n('pa_pangle'),s=v*i/1000;
+out.innerHTML=`<h3>OMICRON 32 Test Table</h3><table class="ansi"><tr><th>Test</th><th>Voltage</th><th>Current</th><th>Angle</th><th>Expected</th></tr><tr><td>Stable</td><td>${v.toFixed(3)} V</td><td>${i.toFixed(3)} A</td><td>${(a+180).toFixed(1)}°</td><td>NO TRIP</td></tr><tr><td>Forward Pickup</td><td>${v.toFixed(3)} V</td><td>${i.toFixed(3)} A</td><td>${a.toFixed(1)}°</td><td>Pickup</td></tr><tr><td>Trip</td><td>${v.toFixed(3)} V</td><td>${i.toFixed(3)} A</td><td>${a.toFixed(1)}°</td><td>TRIP</td></tr></table><p class="formula">Power-direction angle convention depends on relay phase reference.</p>`;
+}
+}
+
+
+function renderRelayTimeForm(){
+const t=document.getElementById('rtfunc').value,f=document.getElementById('rtform');
+if(['51','51N','67','67N'].includes(t)) f.innerHTML=`<div class="grid">
+<div><label>Pickup Current (A)</label><input id="rt_pick" type="number" value="1" step="0.01"></div>
+<div><label>CT Secondary / Relay In (A)</label><select id="rt_sec"><option value="5">5 A</option><option value="1">1 A</option></select></div>
+<div><label>Curve</label><select id="rt_curve"><option value="NI">IEC Normal Inverse</option><option value="VI">IEC Very Inverse</option><option value="EI">IEC Extremely Inverse</option><option value="LTI">IEC Long-Time Inverse</option><option value="DT">Definite Time</option></select></div>
+<div><label>TMS</label><input id="rt_tms" type="number" value="0.10" step="0.01"></div><div><label>Definite Time (s)</label><input id="rt_dt" type="number" value="0.30" step="0.01"></div><div><label>Characteristic Angle (°)</label><input id="rt_ang" type="number" value="0"></div><div><label>Additional Delay (s)</label><input id="rt_delay" type="number" value="0" step="0.01"></div>
+</div><button onclick="calcRelayTimeGuide()">Calculate</button>`;
+else if(t==='87T') f.innerHTML=`<div class="grid">
+<div><label>Transformer MVA</label><input id="rt_mva" type="number" value="5"></div><div><label>HV Voltage (kV)</label><input id="rt_hv" type="number" value="33"></div><div><label>LV Voltage (kV)</label><input id="rt_lv" type="number" value="11"></div><div><label>HV CT Primary</label><input id="rt_hct" type="number" value="100"></div><div><label>LV CT Primary</label><input id="rt_lct" type="number" value="300"></div><div><label>CT Secondary</label><select id="rt_sec"><option value="5">5 A</option><option value="1">1 A</option></select></div><div><label>Vector Group</label><input id="rt_vg" value="Dyn11"></div><div><label>Differential Pickup (%)</label><input id="rt_dp" type="number" value="30"></div><div><label>Bias / Slope (%)</label><input id="rt_bias" type="number" value="30"></div>
+</div><button onclick="calcRelayTimeGuide()">Generate 87T Guide</button>`;
+else if(['87B','87L'].includes(t)) f.innerHTML=`<div class="grid"><div><label>Pickup Current (A)</label><input id="rt_pick" type="number" value="1" step="0.01"></div><div><label>CT Secondary (A)</label><select id="rt_sec"><option value="5">5 A</option><option value="1">1 A</option></select></div><div><label>Stability ×In</label><input id="rt_stab" type="number" value="1" step="0.1"></div><div><label>Operate ×In</label><input id="rt_op" type="number" value="2" step="0.1"></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+else if(t==='27'||t==='59') f.innerHTML=`<div class="grid"><div><label>Nominal Voltage (V)</label><input id="rt_vnom" type="number" value="110"></div><div><label>Pickup (%)</label><input id="rt_vpct" type="number" value="${t==='27'?90:110}"></div><div><label>Time Delay (s)</label><input id="rt_vdelay" type="number" value="0.30" step="0.01"></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+else if(t==='46') f.innerHTML=`<div class="grid"><div><label>Positive Sequence Current (A)</label><input id="rt_pos" type="number" value="1"></div><div><label>Negative Sequence Pickup (%)</label><input id="rt_npct" type="number" value="20"></div><div><label>Time Delay (s)</label><input id="rt_ndelay" type="number" value="0.30"></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+else if(t==='49') f.innerHTML=`<div class="grid"><div><label>Rated Current (A)</label><input id="rt_rated" type="number" value="5"></div><div><label>Thermal Pickup (%)</label><input id="rt_th" type="number" value="100"></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+else if(t==='81') f.innerHTML=`<div class="grid"><div><label>Nominal Frequency (Hz)</label><input id="rt_hz" type="number" value="50"></div><div><label>Pickup Frequency (Hz)</label><input id="rt_fp" type="number" value="49"></div><div><label>Function</label><select id="rt_fd"><option>81U</option><option>81O</option></select></div><div><label>Time Delay (s)</label><input id="rt_fdelay" type="number" value="0.30"></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+else if(t==='21') f.innerHTML=`<div class="grid"><div><label>Zone Reach (Ω)</label><input id="rt_z" type="number" value="10"></div><div><label>Fault Angle (°)</label><input id="rt_zang" type="number" value="75"></div><div><label>Zone</label><select id="rt_zone"><option>Zone 1</option><option>Zone 2</option><option>Zone 3</option></select></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+else if(t==='32') f.innerHTML=`<div class="grid"><div><label>Nominal Voltage (V)</label><input id="rt_pv" type="number" value="110"></div><div><label>Current (A)</label><input id="rt_pi" type="number" value="1"></div><div><label>Characteristic Angle (°)</label><input id="rt_pa" type="number" value="0"></div><div><label>Pickup (%)</label><input id="rt_pp" type="number" value="5"></div></div><button onclick="calcRelayTimeGuide()">Generate Guide</button>`;
+}
+function calcRelayTimeGuide(){
+const t=document.getElementById('rtfunc').value,out=document.getElementById('rtout');
+if(['51','51N','67','67N'].includes(t)){
+let p=n('rt_pick'),curve=document.getElementById('rt_curve').value,tms=n('rt_tms'),dt=n('rt_dt'),ang=n('rt_ang'),delay=n('rt_delay');
+let rows=[1,2,5,10].map(x=>{let cur=p*x,time='Pickup';if(x>1){if(curve==='DT')time=(dt+delay).toFixed(4)+' s';else{let z=curve==='NI'?tms*.14/(Math.pow(x,.02)-1):curve==='VI'?tms*13.5/(x-1):curve==='EI'?tms*80/(Math.pow(x,2)-1):tms*120/(x-1);time=(z+delay).toFixed(4)+' s';}}return `<tr><td>${x}×</td><td>${cur.toFixed(3)} A</td><td>${t==='67'||t==='67N'?ang.toFixed(1)+'°':'—'}</td><td>${time}</td><td>${x===1?'Pickup check':'Timing / Trip'}</td></tr>`}).join('');
+out.innerHTML=`<h3>Relay Time + Omicron Test Guide</h3><table class="ansi"><tr><th>PSM</th><th>Current Inject</th><th>Angle</th><th>Operating Time</th><th>Purpose</th></tr>${rows}</table><p><strong>Sequence:</strong> Pickup → 2× → 5× → 10× timing → trip/output → reset.</p><p class="formula">IEC time is theoretical; use exact relay curve/tolerance. Directional angle must follow relay polarizing reference.</p>`;
+}else if(t==='87T'){
+let m=n('rt_mva'),hv=n('rt_hv'),lv=n('rt_lv'),hct=n('rt_hct'),lct=n('rt_lct'),s=n('rt_sec'),dp=n('rt_dp'),bias=n('rt_bias'),vg=document.getElementById('rt_vg').value;
+let ih=m*1000/(Math.sqrt(3)*hv),il=m*1000/(Math.sqrt(3)*lv),hs=ih*s/hct,ls=il*s/lct,pick=s*dp/100,clock=30,mm=vg.match(/(\d{1,2})$/);if(mm)clock=(parseInt(mm[1])*30)%360;
+out.innerHTML=`<h3>87T Differential Test Guide</h3><table class="ansi"><tr><th>Test</th><th>HV Inject</th><th>HV Angle</th><th>LV Inject</th><th>LV Angle*</th><th>Expected</th></tr><tr><td>CT/Phase</td><td>${hs.toFixed(3)} A</td><td>0°</td><td>${ls.toFixed(3)} A</td><td>${clock}°*</td><td>Correct phase</td></tr><tr><td>Stability</td><td>${hs.toFixed(3)} A</td><td>0°</td><td>${ls.toFixed(3)} A</td><td>${clock}°*</td><td>NO TRIP</td></tr><tr><td>Pickup</td><td>Reference</td><td>0°</td><td>Mismatch adjusted</td><td>Compensated*</td><td>Pickup</td></tr><tr><td>Bias/Slope</td><td>Multiple points</td><td>0°</td><td>Adjusted</td><td>Compensated*</td><td>Characteristic</td></tr><tr><td>Trip</td><td>Above characteristic</td><td>0°</td><td>Adjusted</td><td>Compensated*</td><td>TRIP</td></tr></table><p>HV secondary ${hs.toFixed(3)} A | LV secondary ${ls.toFixed(3)} A | Pickup reference ${pick.toFixed(3)} A | Bias ${bias}% | Vector Group ${vg}</p><p class="formula">*Vector-group clock angle is planning reference only; exact Omicron angle depends on relay compensation and phase reference.</p>`;
+}else if(t==='87B'||t==='87L'){let p=n('rt_pick'),s=n('rt_sec'),st=n('rt_stab'),op=n('rt_op');out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Current</th><th>Expected</th></tr><tr><td>Stability</td><td>${(s*st).toFixed(3)} A</td><td>NO TRIP</td></tr><tr><td>Pickup</td><td>${p.toFixed(3)} A</td><td>Pickup</td></tr><tr><td>Operate/Trip</td><td>${(s*op).toFixed(3)} A</td><td>TRIP</td></tr></table>`;}
+else if(t==='27'||t==='59'){let v=n('rt_vnom'),pk=v*n('rt_vpct')/100,d=n('rt_vdelay');out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Voltage</th><th>Expected</th></tr><tr><td>Normal</td><td>${v.toFixed(3)} V</td><td>Stable</td></tr><tr><td>Pickup</td><td>${pk.toFixed(3)} V</td><td>Pickup</td></tr><tr><td>Trip</td><td>${pk.toFixed(3)} V</td><td>${d.toFixed(3)} s / TRIP</td></tr></table>`;}
+else if(t==='46'){let pos=n('rt_pos'),neg=pos*n('rt_npct')/100,d=n('rt_ndelay');out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Positive Seq.</th><th>Negative Seq.</th><th>Expected</th></tr><tr><td>Stable</td><td>${pos.toFixed(3)} A</td><td>${(neg*.5).toFixed(3)} A</td><td>NO TRIP</td></tr><tr><td>Pickup</td><td>${pos.toFixed(3)} A</td><td>${neg.toFixed(3)} A</td><td>Pickup</td></tr><tr><td>Trip</td><td>${pos.toFixed(3)} A</td><td>${(neg*1.2).toFixed(3)} A</td><td>${d.toFixed(3)} s / TRIP</td></tr></table>`;}
+else if(t==='49'){let r=n('rt_rated'),i=r*n('rt_th')/100;out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Current</th><th>Expected</th></tr><tr><td>Normal</td><td>${r.toFixed(3)} A</td><td>Stable</td></tr><tr><td>Thermal Pickup</td><td>${i.toFixed(3)} A</td><td>Thermal response</td></tr><tr><td>Trip</td><td>Per thermal curve</td><td>TRIP</td></tr></table>`;}
+else if(t==='81'){let hz=n('rt_hz'),fp=n('rt_fp'),d=n('rt_fdelay'),fd=document.getElementById('rt_fd').value;out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Frequency</th><th>Expected</th></tr><tr><td>Normal</td><td>${hz.toFixed(3)} Hz</td><td>NO TRIP</td></tr><tr><td>Pickup</td><td>${fp.toFixed(3)} Hz</td><td>Pickup / ${d.toFixed(3)} s</td></tr><tr><td>Trip</td><td>${fp.toFixed(3)} Hz</td><td>TRIP</td></tr></table><p>Function: ${fd}</p>`;}
+else if(t==='21'){let z=n('rt_z'),a=n('rt_zang');out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Z</th><th>Angle</th><th>Expected</th></tr><tr><td>Inside</td><td>${(z*.8).toFixed(3)} Ω</td><td>${a.toFixed(1)}°</td><td>Operate</td></tr><tr><td>Boundary</td><td>${z.toFixed(3)} Ω</td><td>${a.toFixed(1)}°</td><td>Characteristic</td></tr><tr><td>Outside</td><td>${(z*1.2).toFixed(3)} Ω</td><td>${a.toFixed(1)}°</td><td>NO TRIP</td></tr></table>`;}
+else if(t==='32'){let v=n('rt_pv'),i=n('rt_pi'),a=n('rt_pa');out.innerHTML=`<table class="ansi"><tr><th>Test</th><th>Voltage</th><th>Current</th><th>Angle</th><th>Expected</th></tr><tr><td>Stable</td><td>${v.toFixed(3)} V</td><td>${i.toFixed(3)} A</td><td>${(a+180)%360}°</td><td>NO TRIP</td></tr><tr><td>Forward</td><td>${v.toFixed(3)} V</td><td>${i.toFixed(3)} A</td><td>${a.toFixed(1)}°</td><td>Pickup/Trip</td></tr></table>`;}
+}
+
+function downloadHTML(){
+let blob=new Blob([document.documentElement.outerHTML],{type:'text/html'});
+let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Electrical_Testing_Calculator.html';a.click();URL.revokeObjectURL(a.href);
+}
+calcPT();
+renderProtectionForm();
+renderRelayTimeForm();
+</script>
+</body>
+</html>
